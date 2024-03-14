@@ -50,7 +50,7 @@ def fetch():
   for instruction in instruction_set:
     pc = pc + 4
     next_pc = pc + 4
-    print("Instruction", instruction)
+    print("Instruction:", instruction)
     print("PC:", hex(pc))
     print("Next PC:", hex(next_pc))
     decode(instruction) # Runs the Decode() Function, passing the current instruction as an argument
