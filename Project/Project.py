@@ -21,7 +21,7 @@ def fetch():
   for instruction in instruction_set:
     pc = pc + 4
     next_pc = pc + 4
-    print("Instruction", instruction)
+    print("Instruction:", instruction)
     print("PC:", hex(pc))
     print("Next PC:", hex(next_pc))
     decode(instruction) # Runs the Decode() Function, passing the current instruction as an argument
@@ -78,8 +78,7 @@ def decode(instruction):
     print(f"Funct7: {int(funct7, 2)}")
 
     ControlUnit(opcode, funct3, funct7)
-    print(RegWrite, Branch, ALUSrc)
-    Execute(alu_ctrl)
+    Execute(alu_ctrl, rs1, rs2, rd)
 
   elif opcode == "0010011":
     # This is an I Type instruction =======================================
@@ -238,7 +237,7 @@ def decode(instruction):
     print(f"Immediate: {imm_decimal} (or 0x{format(int(imm, 2), 'X')})")
 
 # Execute Function =====================================================
-def Execute(alu_ctrl):
+def Execute(alu_ctrl, rs1, rs2, rd):
   alu_ctrl_dict = {
     '0000' : 'and',
     '0001' : 'or',
@@ -250,6 +249,7 @@ def Execute(alu_ctrl):
     operation = alu_ctrl_dict[alu_ctrl]
     print(alu_ctrl)
     print(operation)
+    print(int(rs1, 2), int(rs2, 2), int(rd, 2))
 
 # Mem Function ========================================================
 def Mem():
@@ -308,7 +308,7 @@ def ControlUnit(opcode, funct3, funct7):
       alu_ctrl = '0110'
     elif funct3 == '111' and funct7 == '0000000': # AND
       alu_ctrl = '0000'
-    elif funct3 == '110' and funct7 == '0000000': #OR
+    elif funct3 == '110' and funct7 == '0000000': # OR
       alu_ctrl = '0001'
 
 
