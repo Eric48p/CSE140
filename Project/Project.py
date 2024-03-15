@@ -31,36 +31,41 @@ alu_zero = 0
 
 d_mem = ['0'] * 32
 d_mem[28] = '0x5' # Address: 0x70
-d_mem[27] = '0x10' # Address: 0x74
+d_mem[29] = '0x10' # Address: 0x74
 
 branch_target = 0
 
 total_clock_cycles = 0
 
+new_address = '0'
+
 
 
 # Fetch Function =================================================================================================================================================================
 def fetch():
-  global pc, next_pc
+  global pc, next_pc, total_clock_cycles
 
   with open("Project/sample_part1.txt", "r") as file:
     instruction_set = [line.strip() for line in file.readlines()]
-    print(instruction_set)  # This is the instructions stored in an array
+    # print(instruction_set)  # This is the instructions stored in an array
   
-  for instruction in instruction_set:
-    pc = pc + 4
-    next_pc = pc + 4
-    print("Instruction:", instruction)
-    print("PC:", hex(pc))
-    print("Next PC:", hex(next_pc))
-    decode(instruction) # Runs the Decode() Function, passing the current instruction as an argument
-    print('\n')
+    for instruction in instruction_set:
+      pc = pc + 4
+      next_pc = pc + 4
+      # print("Instruction:", instruction)
+      # print("PC:", hex(pc))
+      # print("Next PC:", hex(next_pc))
+      decode(instruction) # Runs the Decode() Function, passing the current instruction as an argument
+
+    print("program terminated:")
+    print("total execution time is", total_clock_cycles, "cycles")
 
 
 # Decode Function =================================================================================================================================================================
 def decode(instruction):
-  global rf, opcode, rd, rs1, rs2, funct3, funct7, imm, sign_extended_imm
-  print("Register File:", rf)
+  global rf, opcode, rd, rs1, rs2, funct3, funct7, imm, sign_extended_imm, d_mem
+  # print("Register File:", rf)
+  # print("Data Memory:", d_mem)
   
 
   opcode = instruction[-7:]
@@ -100,16 +105,15 @@ def decode(instruction):
               # print(op)
               operation = op
 
-    print("\nInstruction Type: R")
-    print(f"Operation: {operation}")
-    print(f"Rs1: x{int(rs1, 2)}")
-    print(f"Rs2: x{int(rs2, 2)}")
-    print(f"Rd: x{int(rd, 2)}")
-    print(f"Funct3: {int(funct3, 2)}")
-    print(f"Funct7: {int(funct7, 2)}")
+    # print("\nInstruction Type: R")
+    # print(f"Operation: {operation}")
+    # print(f"Rs1: x{int(rs1, 2)}")
+    # print(f"Rs2: x{int(rs2, 2)}")
+    # print(f"Rd: x{int(rd, 2)}")
+    # print(f"Funct3: {int(funct3, 2)}")
+    # print(f"Funct7: {int(funct7, 2)}")
 
     ControlUnit()
-    print(RegWrite, Branch, ALUSrc)
     Execute()
 
   elif opcode == "0010011":
@@ -140,11 +144,11 @@ def decode(instruction):
       imm_decimal -= 2 ** len(imm)
     
     
-    print("\nInstruction Type: I")
-    print(f"Operation: {operation}")
-    print(f"Rs1: x{int(rs1, 2)}")
-    print(f"Rd: x{int(rd, 2)}")
-    print(f"Immediate: {imm_decimal} (or 0x{format(int(imm, 2), 'X')})")
+    # print("\nInstruction Type: I")
+    # print(f"Operation: {operation}")
+    # print(f"Rs1: x{int(rs1, 2)}")
+    # print(f"Rd: x{int(rd, 2)}")
+    # print(f"Immediate: {imm_decimal} (or 0x{format(int(imm, 2), 'X')})")
 
   elif opcode == "1100111":
     # This is the jalr instruction =======================================
@@ -164,11 +168,11 @@ def decode(instruction):
     if imm[0] == '1':
       imm_decimal -= 2 ** len(imm)
 
-    print("\nInstruction Type: I")
-    print("Operation: jalr")
-    print(f"Rs1: x{int(rs1, 2)}")
-    print(f"Rd: x{int(rd, 2)}")
-    print(f"Immediate: {imm_decimal} (or 0x{format(int(imm, 2), 'X')})")
+    # print("\nInstruction Type: I")
+    # print("Operation: jalr")
+    # print(f"Rs1: x{int(rs1, 2)}")
+    # print(f"Rd: x{int(rd, 2)}")
+    # print(f"Immediate: {imm_decimal} (or 0x{format(int(imm, 2), 'X')})")
 
   elif opcode == "0000011":
     # This is the lw instruction =======================================
@@ -196,11 +200,11 @@ def decode(instruction):
     if imm[0] == '1':
       imm_decimal -= 2 ** len(imm)
     
-    print("\nInstruction Type: I ")
-    print(f"Operation: {operation}")
-    print(f"Rs1: x{int(rs1, 2)}")
-    print(f"Rd: x{int(rd, 2)}")
-    print(f"Immediate: {imm_decimal} (or 0x{format(int(imm, 2), 'X')})")
+    # print("\nInstruction Type: I ")
+    # print(f"Operation: {operation}")
+    # print(f"Rs1: x{int(rs1, 2)}")
+    # print(f"Rd: x{int(rd, 2)}")
+    # print(f"Immediate: {imm_decimal} (or 0x{format(int(imm, 2), 'X')})")
 
     ControlUnit()
     Execute()
@@ -224,11 +228,13 @@ def decode(instruction):
     if imm[0] == '1':
       imm_decimal -= 2 ** len(imm)
 
-    print("\nInstruction Type: S")
-    print(f"Operation: {operation}")
-    print(f"Rs1: x{int(rs1, 2)}")
-    print(f"Rs2: x{int(rs2, 2)}")
-    print(f"Immediate: {imm_decimal} (or 0x{format(int(imm, 2), 'X')})")
+    # print("\nInstruction Type: S")
+    # print(f"Operation: {operation}")
+    # print(f"Rs1: x{int(rs1, 2)}")
+    # print(f"Rs2: x{int(rs2, 2)}")
+    # print(f"Immediate: {imm_decimal} (or 0x{format(int(imm, 2), 'X')})")
+    ControlUnit()
+    Execute()
 
 
   elif opcode == "1100011":
@@ -256,11 +262,11 @@ def decode(instruction):
     if imm[0] == '1':
       imm_decimal -= 2 ** len(imm)
 
-    print("Instruction Type: SB \n")
-    print(f"Operation: {operation}")
-    print(f"Rs1: x{int(rs1, 2)}")
-    print(f"Rs2: x{int(rs2, 2)}")
-    print(f"Immediate: {imm_decimal}")
+    # print("Instruction Type: SB \n")
+    # print(f"Operation: {operation}")
+    # print(f"Rs1: x{int(rs1, 2)}")
+    # print(f"Rs2: x{int(rs2, 2)}")
+    # print(f"Immediate: {imm_decimal}")
     ControlUnit()
     Execute()
 
@@ -274,14 +280,14 @@ def decode(instruction):
     if imm[0] == '1':
       imm_decimal -= 2 ** len(imm)
 
-    print("\nInstruction Type: UJ")
-    print("Operation: jal")
-    print(f"Rd: x{int(rd, 2)}")
-    print(f"Immediate: {imm_decimal} (or 0x{format(int(imm, 2), 'X')})")
+    # print("\nInstruction Type: UJ")
+    # print("Operation: jal")
+    # print(f"Rd: x{int(rd, 2)}")
+    # print(f"Immediate: {imm_decimal} (or 0x{format(int(imm, 2), 'X')})")
 
 # Execute Function =================================================================================================================================================================
 def Execute():
-  global rf, ALUOp, alu_zero, alu_ctrl, rs1, rs2, rd, sign_extended_imm, branch_target, next_pc, RegWrite, imm, d_mem
+  global rf, ALUOp, alu_zero, alu_ctrl, rs1, rs2, rd, sign_extended_imm, branch_target, next_pc, RegWrite, imm, d_mem, total_clock_cycles, new_address
 
   alu_ctrl_dict = {
     '0000' : 'and',
@@ -292,37 +298,38 @@ def Execute():
 
   if alu_ctrl in alu_ctrl_dict:
     operation = alu_ctrl_dict[alu_ctrl]
-    print(alu_ctrl)
-    print(operation)
+    # print(alu_ctrl)
+    # print(operation)
 
-  # R Type Instructions
   if operation == 'add':
     if ALUOp == 0: 
-      if RegWrite == 1: #lw
-        print("I AM HERE", rf[int(rs1, 2)])
-        temp = hex(int(imm, 2) + int(rf[int(rs1, 2)], 16))
-        temp = d_mem[(int(temp, 16) / 4)]
-        print(temp)
-      elif RegWrite == 0: #0
-        pass
+      if RegWrite == 1: # lw
+        new_address = hex(int(imm, 2) + int(rf[int(rs1, 2)], 16)) # Adding offset to base address
+        Mem()
+      elif RegWrite == 0: # sw
+        new_address = hex(int(imm, 2) + int(rf[int(rs1, 2)], 16)) # Adding offset to base address
+        Mem()
     elif ALUOp == 10: # add
-      rf[int(rd, 2)] = hex(int(rf[int(rs1, 2)], 16) + int(rf[int(rs2, 2)], 16)) # rs1 and rs2 are in binary so convert them to int to access array locations, read the values at memory location as ints to complete computation and store the result as a hex value back to the register file
-      print("TEST ADDITION:", rf[int(rd, 2)])
+      value = hex(int(rf[int(rs1, 2)], 16) + int(rf[int(rs2, 2)], 16)) # rs1 and rs2 are in binary so convert them to ints to access array locations, read the values at memory location as ints to complete computation and store the result as a hex value back to the register file
+      Writeback(value)
   elif operation == 'sub':
     if ALUOp == 1: # beq
       if (int(rf[int(rs1, 2)], 16) - int(rf[int(rs2, 2)], 16) == 0):
         alu_zero = 1 # Both registers values are equal, branch
         temp = sign_extended_imm[1:] + '0' # Shift sign extended immediate left by 1
-        temp = int(temp, 2) + next_pc # Add left shifted sign extended immediate to next pc value
+        branch_target = int(temp, 2) + next_pc # Add left shifted sign extended immediate to next pc value
       else:
         alu_zero = 0 # Registers have different values, don't branch
+        total_clock_cycles = total_clock_cycles + 1 #Increment clock cycle count
+        print("total_clock_cycles", total_clock_cycles, ":")
+        print("pc is modified to", hex(pc), '\n')
     elif ALUOp == 10: # sub
-      rf[int(rd, 2)] = hex(int(rf[int(rs1, 2)], 16) - int(rf[int(rs2, 2)], 16))
-      print("TEST SUBTRATION:", rf[int(rd, 2)])
+      value = hex(int(rf[int(rs1, 2)], 16) - int(rf[int(rs2, 2)], 16))
+      Writeback(value)
   elif operation == 'or':
     if ALUOp == 10: # or
-      # rf[rd] = rf[rs1] or rf[rs2]
-      pass
+      value = hex(int(rf[int(rs1, 2)], 16) | int(rf[int(rs2, 2)], 16))
+      Writeback(value)
   elif operation == 'and':
     if ALUOp == 10: # and
       # rf[rd] = rf[rs1] and rf[rs2]
@@ -330,11 +337,33 @@ def Execute():
 
 # Mem Function =================================================================================================================================================================
 def Mem():
-  pass
+  global RegWrite, d_mem, rf, new_address
+
+  if RegWrite == 1: #lw
+    value = d_mem[int((int(new_address, 16) / 4))]  # Accessing new memory location and retrieving value
+    Writeback(value)
+  elif RegWrite == 0: #sw
+    value = rf[int(rs2, 2)]
+    Writeback(value)
+
 
 # Writeback Function =================================================================================================================================================================
-def Writeback():
-  pass
+def Writeback(value):
+  global rf, rd, total_clock_cycles, pc, opcode, d_mem
+
+  if opcode == '0100011': # sw
+    d_mem[int(int(new_address, 16) / 4)] = value  # Store value into data memory
+    total_clock_cycles = total_clock_cycles + 1 # Increment clock cycle count
+    print("total_clock_cycles", total_clock_cycles, ":")
+    print("memory", new_address, "is modified to", value)
+    print("pc is modified to", hex(pc), '\n')
+  else:
+    rf[int(rd, 2)] = value # Store value to specified register
+    total_clock_cycles = total_clock_cycles + 1 # Increment clock cycle count
+    print("total_clock_cycles", total_clock_cycles, ":")
+    print(hex(int(rd, 2))[1:], "is modified to", value)
+    print("pc is modified to", hex(pc), '\n')
+
 
 # ControlUnit Function =================================================================================================================================================================
 def ControlUnit():
