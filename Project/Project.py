@@ -125,13 +125,13 @@ def decode(instruction):
     funct3 = instruction[17:20]
 
     funct3_dict = {
-    '000': ['addi'],
-    '110': ['ori'],
-    '111': ['andi']
+    '000': 'addi',
+    '110': 'ori',
+    '111': 'andi'
     }
 
     if funct3 in funct3_dict:
-      operations = funct3_dict[funct3]
+      operation = funct3_dict[funct3]
 
     # Sign extension of immediate value 12 bit -> 32 bit
     if imm[0] == '0':
@@ -149,6 +149,9 @@ def decode(instruction):
     # print(f"Rs1: x{int(rs1, 2)}")
     # print(f"Rd: x{int(rd, 2)}")
     # print(f"Immediate: {imm_decimal} (or 0x{format(int(imm, 2), 'X')})")
+      
+    ControlUnit()
+    Execute()
 
   elif opcode == "1100111":
     # This is the jalr instruction =======================================
@@ -287,7 +290,7 @@ def decode(instruction):
 
 # Execute Function =================================================================================================================================================================
 def Execute():
-  global rf, ALUOp, alu_zero, alu_ctrl, rs1, rs2, rd, sign_extended_imm, branch_target, next_pc, RegWrite, imm, d_mem, total_clock_cycles, new_address
+  global rf, ALUOp, alu_zero, alu_ctrl, rs1, rs2, rd, sign_extended_imm, branch_target, next_pc, RegWrite, imm, d_mem, total_clock_cycles, new_address, opcode, sign_extended_imm
 
   alu_ctrl_dict = {
     '0000' : 'and',
@@ -309,9 +312,13 @@ def Execute():
       elif RegWrite == 0: # sw
         new_address = hex(int(imm, 2) + int(rf[int(rs1, 2)], 16)) # Adding offset to base address
         Mem()
-    elif ALUOp == 10: # add
-      value = hex(int(rf[int(rs1, 2)], 16) + int(rf[int(rs2, 2)], 16)) # rs1 and rs2 are in binary so convert them to ints to access array locations, read the values at memory location as ints to complete computation and store the result as a hex value back to the register file
-      Writeback(value)
+    elif ALUOp == 10: 
+      if opcode == '0110011': # add
+        value = hex(int(rf[int(rs1, 2)], 16) + int(rf[int(rs2, 2)], 16)) # rs1 and rs2 are in binary so convert them to ints to access array locations, read the values at memory location as ints to complete computation and store the result as a hex value back to the register file
+        Writeback(value)
+      elif opcode == '0010011': # addi
+        value = hex(int(rf[int(rs1, 2)], 16) + int(sign_extended_imm, 2)) # add rs1 and the sign extended immediate value and store in value
+        Writeback(value)
   elif operation == 'sub':
     if ALUOp == 1: # beq
       if (int(rf[int(rs1, 2)], 16) - int(rf[int(rs2, 2)], 16) == 0):
@@ -327,13 +334,19 @@ def Execute():
       value = hex(int(rf[int(rs1, 2)], 16) - int(rf[int(rs2, 2)], 16))
       Writeback(value)
   elif operation == 'or':
-    if ALUOp == 10: # or
+    if opcode == '0110011': # or
       value = hex(int(rf[int(rs1, 2)], 16) | int(rf[int(rs2, 2)], 16))
       Writeback(value)
+    elif opcode == '0010011': # ori
+      value = hex(int(rf[int(rs1, 2)], 16) | int(sign_extended_imm, 2))
+      Writeback(value)
   elif operation == 'and':
-    if ALUOp == 10: # and
-      # rf[rd] = rf[rs1] and rf[rs2]
-      pass
+    if opcode == '0110011': # and
+      value = hex(int(rf[int(rs1, 2)], 16) & int(rf[int(rs2, 2)], 16))
+      Writeback(value)
+    elif opcode == '0010011': # andi
+      value = hex(int(rf[int(rs1, 2)], 16) & int(sign_extended_imm, 2))
+      Writeback(value)
 
 # Mem Function =================================================================================================================================================================
 def Mem():
@@ -399,7 +412,7 @@ def ControlUnit():
     MemRead = 0 
 
     alu_ctrl = '0110'
-  elif opcode == '0110011' or opcode == '0010011': # R Type and I Type Instructions
+  elif opcode == '0110011': # R Type Instruction
     RegWrite = 1
     Branch = 0
     ALUSrc = 0
@@ -417,6 +430,22 @@ def ControlUnit():
       alu_ctrl = '0000'
     elif funct3 == '110': #OR
       alu_ctrl = '0001'
+    
+  elif opcode == '0010011': # I Type Instruction 
+    RegWrite = 1
+    Branch = 0
+    ALUSrc = 0
+    ALUOp = 10
+    MemWrite = 0
+    MemtoReg = 0
+    MemRead = 0
+
+    if funct3 == '000': # addi
+      alu_ctrl = '0010'
+    elif funct3 == '110': # ori
+      alu_ctrl = '0001'
+    elif funct3 == '111': # andi
+      alu_ctrl = '0000'
 
 
 # Runs the Program =================================================================================================================================================================
