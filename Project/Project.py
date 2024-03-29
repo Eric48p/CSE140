@@ -1,71 +1,71 @@
 # Global Variables
-pc = 0
-next_pc = 0
+pc = 0 # This is the program counter which keeps track of the current instruction
+next_pc = 0 # This is the next program counter which tracks the next instruction
 
-opcode = '0'
-rd = '0'
-rs1 = '0'
-rs2 = '0'
-funct3 = '0'
-funct7 = '0'
-imm = '0'
-sign_extended_imm = '0'
+opcode = '0' # Stores the opcode of an instruction
+rd = '0' # Stores the destination register of an instruction
+rs1 = '0' # Stores the first register of an instruction
+rs2 = '0' # Stores the second register of an instruction
+funct3 = '0' # Stores the funct3 of an instruction
+funct7 = '0' # Stores the funct7 of an instruction
+imm = '0' # Stores the immediate value of an instruction
+sign_extended_imm = '0' # Stores the sign extended immediate of a function
 
-register1_val = 0
-register2_val = 0
+register1_val = 0 # Stores the value that the first register holds  
+register2_val = 0 # Stores the value that the second register holds
 
-RegWrite = 0
-Branch = 0
-ALUSrc = 0
-ALUOp = 0
-MemWrite = 0
-MemtoReg = 0
-MemRead = 0
+RegWrite = 0 # Stores the RegWrite control unit value
+Branch = 0 # Stores the Branch control unit value
+ALUSrc = 0 # Stores the ALUSrc control unit value 
+ALUOp = 0 # Stores the ALUOp control unit value
+MemWrite = 0 # Stores the MemWrite control unit value
+MemtoReg = 0 # Stores the MemtoReg control unit value
+MemRead = 0 # Stores the MemRead control unit value
 
-alu_ctrl = '0'
+alu_ctrl = '0' # Stores the aluctrl value
 
-rf = ['0'] * 32
-rf[1] = '0x20'
-rf[2] = '0x5'
-rf[10] = '0x70'
-rf[11] = '0x4'
+rf = ['0'] * 32 # Declares an array of size 32 with each entry initialized to 0 by default
+rf[1] = '0x20' # Stores 0x20 in position 1 of the register file array
+rf[2] = '0x5' # Stores 0x5 in position 2 of the register file array
+rf[10] = '0x70' # Stores 0x70 in position 10 of the register file array
+rf[11] = '0x4' # Stores 0x4 in position 11 of the register file array
+
 
 # rf[12] = '0x5' # Testing
 # rf[13] = '0x1'
 
-alu_zero = 0
+alu_zero = 0 # Stores the value of alu zero
 
-d_mem = ['0'] * 32
-d_mem[28] = '0x5' # Address: 0x70
-d_mem[29] = '0x10' # Address: 0x74
+d_mem = ['0'] * 32 # Declares an array of size 32 with each entry initialized to 0 by default
+d_mem[28] = '0x5' # Address: 0x70 # Storing 0x5 in position 28 of the data memory array
+d_mem[29] = '0x10' # Address: 0x74 # Storing 0x10 in position 29 of the data memory array
 
-branch_target = 0
 
-total_clock_cycles = 0
+branch_target = 0 # Stores the value of the branch target
 
-new_address = '0'
+total_clock_cycles = 0 # Stores the value for the number of clock cycles
 
-start_index = 0
+new_address = '0' # Stores the value of the new address generated when adding the immediate offset to the target address for load and store word
 
 
 
 # Fetch Function =================================================================================================================================================================
+# This function starts out by asking the user what text file we wish to read from. The user response is stored and used to open the user specified file. The file is read and the instructions in the file are stored in an array. One instruction is read at a time until there are no instructions left. In this function, we keep track of the ‘pc’ and ‘next_pc’ values which are updated before we call the Decode() function. If at any point the ‘branch_target’ value gets updated to be greater than 0, the function knows that we are branching. The variable ‘i’ is updated by adding the array position of the current instruction to the ‘branch_target’. We reset ‘branch_’target’ back to zero and restart the loop which reading the instructions, this time starting at the new position of ‘i’. Once there are no more instructions to be read, the function prints “Program terminated” and the total clock cycle count. 
 def fetch():
-  global pc, next_pc, total_clock_cycles, start_index, branch_target
+  global pc, next_pc, total_clock_cycles, branch_target
   userInput = input("Enter the program file name to run: \n\n")
   print('')
   with open(f"Project/{userInput}", "r") as file:
       instruction_set = [line.strip() for line in file.readlines()]
 
-  i = start_index
+  i = 0
   while i < len(instruction_set):
       instruction = instruction_set[i]
       pc = (i + 1) * 4
       next_pc = pc + 4
       decode(instruction)
       if branch_target != 0:
-          start_index = i + branch_target
-          i = start_index  # Reset i to the start index
+          i = i + branch_target
           branch_target = 0
           continue  # Restart the loop from the new start index
       i += 1
@@ -76,6 +76,7 @@ def fetch():
 
 
 # Decode Function =================================================================================================================================================================
+# This function is called by the fetch function every time an instruction is read. The purpose of this function is to read the 32 bit binary and convert it to assembly language. Depending on the instruction type, we obtain the opcode, registers, immediate values, and funct3/7 values from the function. Once the instruction is decoded and the program knows what registers to deal with, the values those registers contain are stored in the variables ‘register1_val’ and ‘register2_val’.  This function is also responsible for generating the sign extended immediate values. Once an instruction is fully decoded the program calls the ControlUnit and Execute functions.  
 def decode(instruction):
   global rf, opcode, rd, rs1, rs2, funct3, funct7, imm, sign_extended_imm, d_mem, register1_val, register2_val
   # print("Register File:", rf)
@@ -332,6 +333,7 @@ def decode(instruction):
     # print(f"Immediate: {imm_decimal} (or 0x{format(int(imm, 2), 'X')})")
 
 # Execute Function =================================================================================================================================================================
+# This function is responsible for handling the arithmetic needed for the specified instruction. Based on the ‘alu_ctrl’ value generated by the ControlUnit() function, the program can decide what arithmetic operation needs to take place (add, sub, or, and). For load and store word instruction, the new address is generated by adding the immediate offset to the target address. This new address tells the program where to load a value from or where to store a value. The Mem() function is called after the new address has been determined. For branching if equal, if the register 1 value minus the register 2 value is equal to 0, the program is told to branch. The ‘alu_ zero’ value changes to 1, indicating a branch, the ‘branch_target’ is generated, and the total clock cycles and the value of pc are printed. If the register 1 value minus the register 2 value is not 0, this program knows this is not the branch is not taken. ‘alu_zero’ is set to 0 and the total clock cycles and pc value are printed. The rest of the instructions are different forms of addition, subtraction, and, and or which are stored in a variable called ‘value’. The value is passed as an argument to the Writeback() function. 
 def Execute():
   global rf, ALUOp, alu_zero, alu_ctrl, rs1, rs2, rd, sign_extended_imm, branch_target, next_pc, RegWrite, imm, d_mem, total_clock_cycles, new_address, opcode, sign_extended_imm, register1_val, register2_val
 
@@ -366,7 +368,7 @@ def Execute():
     if ALUOp == 1: # beq
       if (register1_val - register2_val == 0):
         alu_zero = 1 # Both registers values are equal, branch
-        temp = sign_extended_imm * 2 # Shift sign extended immediate left by 1 (multiply by 2)
+        # temp = sign_extended_imm * 2 # Shift sign extended immediate left by 1 (multiply by 2)
         # branch_target = temp + next_pc # Add left shifted sign extended immediate to next pc value
         branch_target = sign_extended_imm // 4
         total_clock_cycles = total_clock_cycles + 1 #Increment clock cycle count
@@ -396,6 +398,7 @@ def Execute():
       Writeback(value)
 
 # Mem Function =================================================================================================================================================================
+# This function is only used for load and store word instructions. The program checks the current value of ‘RegWrite’ to determine which instruction is currently being dealt with. If ‘RegWrite’ is equal to 1, it is a load word instruction and if it is equal to 0, it is a store word instruction. For load word instructions, the new address calculated in the Execute() function is used to access the data memory of that specified address. The value that address contains is stored in a variable called value. That value is passed as an argument to the Writeback() function. For store word instructions, the value of register 2 is stored in a variable called value and passed as an argument to the Writeback() function. 
 def Mem():
   global RegWrite, d_mem, rf, new_address
 
@@ -408,6 +411,7 @@ def Mem():
 
 
 # Writeback Function =================================================================================================================================================================
+# This function is responsible for storing the computation result back to a destination register. For store word instructions, the value that was passed as an argument is stored at the specified new address in data memory that was calculated in the Execute() function. The total clock cycles, memory location that was modified, and pc value are printed. For every other instruction that calls the Writeback() function, the value that was passed as an argument is stored in the destination register. The total clock cycles, value that the destination register was changed to, and pc value are printed. 
 def Writeback(value):
   global rf, rd, total_clock_cycles, pc, opcode, d_mem
 
@@ -428,6 +432,7 @@ def Writeback(value):
 
 
 # ControlUnit Function =================================================================================================================================================================
+# The control unit function is responsible for generating control unit signals and alu control values for each instruction. The variables being updated are ‘RegWrite’, ‘Branch’, ‘ALUSrc’, ‘ALUOp’, ‘MemWrite’, ‘MemtoReg’, ‘MemRead’, and ‘alu_ctrl’. The program will use some of these values later on for other functions, so it is important that the values be changed accurately. 
 def ControlUnit():
   global RegWrite, Branch, ALUSrc, ALUOp, MemWrite, MemtoReg, MemRead, alu_ctrl, opcode, funct3, funct7
 
