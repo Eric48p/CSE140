@@ -10,7 +10,6 @@ funct3 = '0' # Stores the funct3 of an instruction
 funct7 = '0' # Stores the funct7 of an instruction
 imm = '0' # Stores the immediate value of an instruction
 sign_extended_imm = '0' # Stores the sign extended immediate of a function
-jal_imm = 0
 
 register1_val = 0 # Stores the value that the first register holds  
 register2_val = 0 # Stores the value that the second register holds
@@ -26,17 +25,10 @@ MemRead = 0 # Stores the MemRead control unit value
 alu_ctrl = '0' # Stores the aluctrl value
 
 rf = ['0'] * 32 # Declares an array of size 32 with each entry initialized to 0 by default
-# rf[1] = '0x20' # Stores 0x20 in position 1 of the register file array
-# rf[2] = '0x5' # Stores 0x5 in position 2 of the register file array
-# rf[10] = '0x70' # Stores 0x70 in position 10 of the register file array
-# rf[11] = '0x4' # Stores 0x4 in position 11 of the register file array
-rf[8] = '0x20' # sample_test2
-rf[10] = '0x5'
-rf[11] = '0x2'
-rf[12] = '0xa'
-rf[13] = '0xf'
-
-
+rf[1] = '0x20' # Stores 0x20 in position 1 of the register file array
+rf[2] = '0x5' # Stores 0x5 in position 2 of the register file array
+rf[10] = '0x70' # Stores 0x70 in position 10 of the register file array
+rf[11] = '0x4' # Stores 0x4 in position 11 of the register file array
 
 # rf[12] = '0x5' # Testing
 # rf[13] = '0x1'
@@ -44,8 +36,8 @@ rf[13] = '0xf'
 alu_zero = 0 # Stores the value of alu zero
 
 d_mem = ['0'] * 32 # Declares an array of size 32 with each entry initialized to 0 by default
-# d_mem[28] = '0x5' # Address: 0x70 # Storing 0x5 in position 28 of the data memory array
-# d_mem[29] = '0x10' # Address: 0x74 # Storing 0x10 in position 29 of the data memory array
+d_mem[28] = '0x5' # Address: 0x70 # Storing 0x5 in position 28 of the data memory array
+d_mem[29] = '0x10' # Address: 0x74 # Storing 0x10 in position 29 of the data memory array
 
 
 branch_target = 0 # Stores the value of the branch target
@@ -54,30 +46,24 @@ total_clock_cycles = 0 # Stores the value for the number of clock cycles
 
 new_address = '0' # Stores the value of the new address generated when adding the immediate offset to the target address for load and store word
 
-i = 0 # Keeps track of instruction line from text file
-
 
 
 # Fetch Function =================================================================================================================================================================
 # This function starts out by asking the user what text file we wish to read from. The user response is stored and used to open the user specified file. The file is read and the instructions in the file are stored in an array. One instruction is read at a time until there are no instructions left. In this function, we keep track of the ‘pc’ and ‘next_pc’ values which are updated before we call the Decode() function. If at any point the ‘branch_target’ value gets updated to be greater than 0, the function knows that we are branching. The variable ‘i’ is updated by adding the array position of the current instruction to the ‘branch_target’. We reset ‘branch_’target’ back to zero and restart the loop which reading the instructions, this time starting at the new position of ‘i’. Once there are no more instructions to be read, the function prints “Program terminated” and the total clock cycle count. 
 def fetch():
-  global pc, next_pc, total_clock_cycles, branch_target, i
+  global pc, next_pc, total_clock_cycles, branch_target
   userInput = input("Enter the program file name to run: \n\n")
   print('')
   with open(f"Project/{userInput}", "r") as file:
       instruction_set = [line.strip() for line in file.readlines()]
 
+  i = 0
   while i < len(instruction_set):
       instruction = instruction_set[i]
       pc = (i + 1) * 4
       next_pc = pc + 4
       decode(instruction)
       if branch_target != 0:
-        if opcode == '1100111' or opcode == '1101111':
-          i = branch_target
-          branch_target = 0
-          continue
-        else:
           i = i + branch_target
           branch_target = 0
           continue  # Restart the loop from the new start index
@@ -91,7 +77,7 @@ def fetch():
 # Decode Function =================================================================================================================================================================
 # This function is called by the fetch function every time an instruction is read. The purpose of this function is to read the 32 bit binary and convert it to assembly language. Depending on the instruction type, we obtain the opcode, registers, immediate values, and funct3/7 values from the function. Once the instruction is decoded and the program knows what registers to deal with, the values those registers contain are stored in the variables ‘register1_val’ and ‘register2_val’.  This function is also responsible for generating the sign extended immediate values. Once an instruction is fully decoded the program calls the ControlUnit and Execute functions.  
 def decode(instruction):
-  global rf, opcode, rd, rs1, rs2, funct3, funct7, imm, sign_extended_imm, d_mem, register1_val, register2_val, jal_imm
+  global rf, opcode, rd, rs1, rs2, funct3, funct7, imm, sign_extended_imm, d_mem, register1_val, register2_val
   # print("Register File:", rf)
   # print("Data Memory:", d_mem)
   
@@ -148,13 +134,13 @@ def decode(instruction):
 
 
 
-    # print("\nInstruction Type: R")
-    # print(f"Operation: {operation}")
-    # print(f"Rs1: x{int(rs1, 2)}")
-    # print(f"Rs2: x{int(rs2, 2)}")
-    # print(f"Rd: x{int(rd, 2)}")
-    # print(f"Funct3: {int(funct3, 2)}")
-    # print(f"Funct7: {int(funct7, 2)}")
+    print("\nInstruction Type: R")
+    print(f"Operation: {operation}")
+    print(f"Rs1: x{int(rs1, 2)}")
+    print(f"Rs2: x{int(rs2, 2)}")
+    print(f"Rd: x{int(rd, 2)}")
+    print(f"Funct3: {int(funct3, 2)}")
+    print(f"Funct7: {int(funct7, 2)}")
 
     ControlUnit()
     Execute()
@@ -192,11 +178,11 @@ def decode(instruction):
     elif operation == 'andi':
       register1_val = int(rf[int(rs1, 2)], 16)
     
-    # print("\nInstruction Type: I")
-    # print(f"Operation: {operation}")
-    # print(f"Rs1: x{int(rs1, 2)}")
-    # print(f"Rd: x{int(rd, 2)}")
-    # print(f"Immediate: {imm_decimal} (or 0x{format(int(imm, 2), 'X')})")
+    print("\nInstruction Type: I")
+    print(f"Operation: {operation}")
+    print(f"Rs1: x{int(rs1, 2)}")
+    print(f"Rd: x{int(rd, 2)}")
+    print(f"Immediate: {imm_decimal} (or 0x{format(int(imm, 2), 'X')})")
       
     ControlUnit()
     Execute()
@@ -209,21 +195,21 @@ def decode(instruction):
     imm_decimal = int(imm, 2)
     funct3 = instruction[17:20]
 
+    # Sign extension of immediate value 12 bit -> 32 bit
     if imm[0] == '0':
-      jal_imm = imm_decimal
+      sign_extended_imm = '0' * 20 + imm
     else:
-      imm_decimal -= 2 ** len(imm) # Negative number
-      jal_imm = imm_decimal
+      sign_extended_imm = '1' * 20 + imm
 
-    register1_val = int(rf[int(rs1, 2)], 16)
+    # If the most significant bit is 1, this is a negative number
+    if imm[0] == '1':
+      imm_decimal -= 2 ** len(imm)
 
-    # print("\nInstruction Type: I")
-    # print("Operation: jalr")
-    # print(f"Rs1: x{int(rs1, 2)}")
-    # print(f"Rd: x{int(rd, 2)}")
-    # print(f"Immediate: {imm_decimal} (or 0x{format(int(imm, 2), 'X')})")
-    ControlUnit()
-    Execute()
+    print("\nInstruction Type: I")
+    print("Operation: jalr")
+    print(f"Rs1: x{int(rs1, 2)}")
+    print(f"Rd: x{int(rd, 2)}")
+    print(f"Immediate: {imm_decimal} (or 0x{format(int(imm, 2), 'X')})")
 
   elif opcode == "0000011":
     # This is the lw instruction =======================================
@@ -251,11 +237,11 @@ def decode(instruction):
 
     register1_val = int(rf[int(rs1, 2)], 16)
     
-    # print("\nInstruction Type: I ")
-    # print(f"Operation: {operation}")
-    # print(f"Rs1: x{int(rs1, 2)}")
-    # print(f"Rd: x{int(rd, 2)}")
-    # print(f"Immediate: {imm_decimal} (or 0x{format(int(imm, 2), 'X')})")
+    print("\nInstruction Type: I ")
+    print(f"Operation: {operation}")
+    print(f"Rs1: x{int(rs1, 2)}")
+    print(f"Rd: x{int(rd, 2)}")
+    print(f"Immediate: {imm_decimal} (or 0x{format(int(imm, 2), 'X')})")
       
     ControlUnit()
     Execute()
@@ -284,11 +270,11 @@ def decode(instruction):
     
     register1_val = int(rf[int(rs1, 2)], 16)
 
-    # print("\nInstruction Type: S")
-    # print(f"Operation: {operation}")
-    # print(f"Rs1: x{int(rs1, 2)}")
-    # print(f"Rs2: x{int(rs2, 2)}")
-    # print(f"Immediate: {imm_decimal} ")
+    print("\nInstruction Type: S")
+    print(f"Operation: {operation}")
+    print(f"Rs1: x{int(rs1, 2)}")
+    print(f"Rs2: x{int(rs2, 2)}")
+    print(f"Immediate: {imm_decimal} ")
     ControlUnit()
     Execute()
 
@@ -322,11 +308,11 @@ def decode(instruction):
     register2_val = int(rf[int(rs2, 2)], 16)
   
 
-    # print("Instruction Type: SB \n")
-    # print(f"Operation: {operation}")
-    # print(f"Rs1: x{int(rs1, 2)}")
-    # print(f"Rs2: x{int(rs2, 2)}")
-    # print(f"Immediate: {imm_decimal}")
+    print("Instruction Type: SB \n")
+    print(f"Operation: {operation}")
+    print(f"Rs1: x{int(rs1, 2)}")
+    print(f"Rs2: x{int(rs2, 2)}")
+    print(f"Immediate: {imm_decimal}")
     ControlUnit()
     Execute()
 
@@ -336,23 +322,19 @@ def decode(instruction):
     imm = instruction[0] + instruction[12:20] + instruction[11] + instruction[1:11] + '0'
     imm_decimal = int(imm, 2)
 
-    if imm[0] == '0':
-      jal_imm = imm_decimal
-    else:
-      imm_decimal -= 2 ** len(imm) # Negative number
-      jal_imm = imm_decimal
+    # If the most significant bit is 1, this is a negative number
+    if imm[0] == '1':
+      imm_decimal -= 2 ** len(imm)
 
-    # print("\nInstruction Type: UJ")
-    # print("Operation: jal")
-    # print(f"Rd: x{int(rd, 2)}")
-    # print(f"Immediate: {imm_decimal} (or 0x{format(int(imm, 2), 'X')})")
-    ControlUnit()
-    Execute()
+    print("\nInstruction Type: UJ")
+    print("Operation: jal")
+    print(f"Rd: x{int(rd, 2)}")
+    print(f"Immediate: {imm_decimal} (or 0x{format(int(imm, 2), 'X')})")
 
 # Execute Function =================================================================================================================================================================
 # This function is responsible for handling the arithmetic needed for the specified instruction. Based on the ‘alu_ctrl’ value generated by the ControlUnit() function, the program can decide what arithmetic operation needs to take place (add, sub, or, and). For load and store word instruction, the new address is generated by adding the immediate offset to the target address. This new address tells the program where to load a value from or where to store a value. The Mem() function is called after the new address has been determined. For branching if equal, if the register 1 value minus the register 2 value is equal to 0, the program is told to branch. The ‘alu_ zero’ value changes to 1, indicating a branch, the ‘branch_target’ is generated, and the total clock cycles and the value of pc are printed. If the register 1 value minus the register 2 value is not 0, this program knows this is not the branch is not taken. ‘alu_zero’ is set to 0 and the total clock cycles and pc value are printed. The rest of the instructions are different forms of addition, subtraction, and, and or which are stored in a variable called ‘value’. The value is passed as an argument to the Writeback() function. 
 def Execute():
-  global rf, ALUOp, alu_zero, alu_ctrl, rs1, rs2, rd, sign_extended_imm, branch_target, next_pc, RegWrite, imm, d_mem, total_clock_cycles, new_address, opcode, sign_extended_imm, register1_val, register2_val, i
+  global rf, ALUOp, alu_zero, alu_ctrl, rs1, rs2, rd, sign_extended_imm, branch_target, next_pc, RegWrite, imm, d_mem, total_clock_cycles, new_address, opcode, sign_extended_imm, register1_val, register2_val
 
   alu_ctrl_dict = {
     '0000' : 'and',
@@ -380,15 +362,6 @@ def Execute():
         Writeback(value)
       elif opcode == '0010011': # addi
         value = hex(register1_val + sign_extended_imm) # add rs1 and the sign extended immediate value and store in value
-        Writeback(value)
-    elif ALUOp == 1:
-      if opcode == '1101111': # Jal Instruction
-        branch_target = (jal_imm // 4) + i
-        value = hex(pc)
-        Writeback(value)
-      elif opcode == '1100111': # Jalr Instruction
-        branch_target = (register1_val + jal_imm) // 4
-        value =  hex(next_pc)
         Writeback(value)
   elif operation == 'sub':
     if ALUOp == 1: # beq
@@ -441,19 +414,7 @@ def Mem():
 def Writeback(value):
   global rf, rd, total_clock_cycles, pc, opcode, d_mem
 
-  if opcode == '1101111': # Jal
-    rf[int(rd, 2)] = value # Store value to specified register
-    total_clock_cycles = total_clock_cycles + 1 # Increment clock cycle count
-    print("total_clock_cycles", total_clock_cycles, ":")
-    print('ra is modified to', hex(pc)) # Store PC value in ra
-    print("pc is modified to", hex(branch_target * 4), '\n')
-  elif opcode == '1100111': # Jalr
-    rf[int(rd, 2)] = value # Store value to specified register
-    total_clock_cycles = total_clock_cycles + 1 # Increment clock cycle count
-    print("total_clock_cycles", total_clock_cycles, ":")
-    print('ra is modified to', hex(pc)) # Store PC value in ra
-    print("pc is modified to", hex(branch_target * 4), '\n') 
-  elif opcode == '0100011': # sw
+  if opcode == '0100011': # sw
     d_mem[int(int(new_address, 16) / 4)] = value  # Store value into data memory
     total_clock_cycles = total_clock_cycles + 1 # Increment clock cycle count
     print("total_clock_cycles", total_clock_cycles, ":")
@@ -538,28 +499,6 @@ def ControlUnit():
       alu_ctrl = '0001'
     elif funct3 == '111': # andi
       alu_ctrl = '0000'
-  
-  elif opcode == '1101111': # Jal Instruction
-    RegWrite = 0
-    Branch = 0
-    ALUSrc = 0
-    ALUOp = 1
-    MemWrite = 0
-    MemtoReg = 0
-    MemRead = 0
-
-    alu_ctrl = '0010' # add
-
-  elif opcode == '1100111': # Jalr Instruction
-    RegWrite = 0
-    Branch = 0
-    ALUSrc = 0
-    ALUOp = 1 
-    MemWrite = 0
-    MemtoReg = 0
-    MemRead = 0
-
-    alu_ctrl = '0010' # add
 
 
 # Runs the Program =================================================================================================================================================================
